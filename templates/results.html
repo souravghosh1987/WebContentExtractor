@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scraping Results - Web Content Extractor</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container py-4">
+        <header class="pb-3 mb-4 border-bottom">
+            <div class="d-flex align-items-center text-body-emphasis text-decoration-none">
+                <i class="bi bi-globe fs-4 me-2"></i>
+                <span class="fs-4">Web Content Extractor</span>
+            </div>
+        </header>
+
+        <div class="p-5 mb-4 bg-body-tertiary rounded-3">
+            <div class="container-fluid py-3">
+                <h1 class="display-5 fw-bold">Scraping Results</h1>
+                <p class="col-md-8 fs-4">Results from scraping <strong>{{ url }}</strong></p>
+                
+                <div class="alert alert-success" role="alert">
+                    <h4 class="alert-heading"><i class="bi bi-check-circle me-2"></i>Scraping Complete!</h4>
+                    <p>Scraped {{ urls_count }} URLs in {{ duration }} seconds.</p>
+                    <p>Extracted content from {{ content_count }} pages.</p>
+                </div>
+                
+                <a href="{{ url_for('download_results', job_id=job_id) }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-file-earmark-text me-2"></i>Download Results
+                </a>
+                
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg ms-2">
+                    <i class="bi bi-arrow-left me-2"></i>Start New Scrape
+                </a>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Content Preview</span>
+                        <span class="badge bg-primary">{{ content_count }} Pages</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="accordion" id="contentAccordion">
+                            {% for url, preview in content_preview.items() %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}">
+                                        <i class="bi bi-file-text me-2"></i>{{ url }}
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#contentAccordion">
+                                    <div class="accordion-body">
+                                        <pre class="content-preview">{{ preview }}</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="pt-3 mt-4 text-body-secondary border-top">
+            &copy; 2023 Web Content Extractor
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -40,15 +40,16 @@ def is_allowed_by_robots(url):
         # If there's an error, we'll default to allowing the URL
         return True
 
-def extract_internal_urls(base_url, max_urls=50, progress_callback=None, preview=False):
+def extract_internal_urls(base_url, max_urls=50, progress_callback=None, preview=False, blog_urls=None):
     """
-    Extract internal URLs from a website's homepage.
+    Extract internal URLs from a website's homepage or specific blog sections.
     
     Args:
         base_url: The URL of the homepage.
         max_urls: Maximum number of URLs to extract.
         progress_callback: Callback function to report progress.
         preview: If True, returns quickly with a sample of URLs.
+        blog_urls: List of specific blog URLs to scrape (e.g., blog section pages).
         
     Returns:
         A list of internal URLs.
@@ -73,29 +74,37 @@ def extract_internal_urls(base_url, max_urls=50, progress_callback=None, preview
     session.headers.update({'User-Agent': get_random_user_agent()})
     
     try:
-        # Request the base URL
-        if progress_callback:
-            progress_callback(5, f"Requesting homepage: {base_url}")
-            
-        response = session.get(base_url, timeout=10)
-        response.raise_for_status()
+        # Determine which URLs to process
+        urls_to_process = [base_url]
+        if blog_urls and isinstance(blog_urls, list):
+            urls_to_process = blog_urls
+            if progress_callback:
+                progress_callback(5, f"Processing {len(blog_urls)} blog sections")
         
-        # Check if the content type is HTML
-        content_type = response.headers.get('Content-Type', '').lower()
-        if 'text/html' not in content_type:
-            raise ValueError(f"URL does not return HTML content: {content_type}")
-        
-        # Parse the HTML
-        if progress_callback:
-            progress_callback(10, "Parsing homepage HTML")
+        # Process each URL and collect links
+        all_links = []
+        for i, url_to_process in enumerate(urls_to_process):
+            if progress_callback:
+                progress_callback(5 + i*3, f"Requesting: {url_to_process}")
             
-        soup = BeautifulSoup(response.text, 'lxml')
-        
-        # Extract all links
-        if progress_callback:
-            progress_callback(15, "Extracting links from homepage")
+            response = session.get(url_to_process, timeout=10)
+            response.raise_for_status()
             
-        links = soup.find_all('a', href=True)
+            # Check if the content type is HTML
+            content_type = response.headers.get('Content-Type', '').lower()
+            if 'text/html' not in content_type:
+                logger.warning(f"URL does not return HTML content: {content_type}, skipping")
+                continue
+            
+            # Parse the HTML
+            if progress_callback:
+                progress_callback(10 + i*3, f"Parsing HTML from: {url_to_process}")
+            
+            soup = BeautifulSoup(response.text, 'lxml')
+            
+            # Extract all links from this page
+            links = soup.find_all('a', href=True)
+            all_links.extend(links)
         
         # Process links and filter for internal URLs
         internal_urls = set()
@@ -103,7 +112,7 @@ def extract_internal_urls(base_url, max_urls=50, progress_callback=None, preview
         if progress_callback:
             progress_callback(20, "Filtering for internal links")
             
-        for i, link in enumerate(links):
+        for i, link in enumerate(all_links):
             href = link['href'].strip()
             
             # Skip empty links, anchors, javascript
@@ -146,7 +155,7 @@ def extract_internal_urls(base_url, max_urls=50, progress_callback=None, preview
                 
             # Update progress periodically
             if progress_callback and i % 10 == 0:
-                progress = 20 + min(60, int((i / len(links)) * 60))
+                progress = 20 + min(60, int((i / len(all_links)) * 60))
                 progress_callback(progress, f"Processing links: {len(internal_urls)} internal URLs found")
         
         # Limit the number of URLs to the maximum

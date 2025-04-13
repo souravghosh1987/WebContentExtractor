@@ -65,6 +65,7 @@ def index():
 def start_scraping():
     url = request.form.get('url', '').strip()
     max_pages = int(request.form.get('max_pages', 10))
+    blog_urls_input = request.form.get('blog_urls', '').strip()
     
     # Validate URL
     if not url:
@@ -81,6 +82,23 @@ def start_scraping():
             return jsonify({'error': 'Invalid URL format: missing domain name'}), 400
     except Exception as e:
         return jsonify({'error': f'Invalid URL: {str(e)}'}), 400
+    
+    # Process optional blog URLs
+    blog_urls = None
+    if blog_urls_input:
+        blog_urls = [url.strip() for url in blog_urls_input.split(',')]
+        
+        # Ensure all blog URLs have a scheme and validate them
+        for i in range(len(blog_urls)):
+            if not blog_urls[i].startswith(('http://', 'https://')):
+                blog_urls[i] = 'https://' + blog_urls[i]
+                
+            try:
+                parsed = urllib.parse.urlparse(blog_urls[i])
+                if not parsed.netloc:
+                    return jsonify({'error': f'Invalid blog URL: {blog_urls[i]}'}), 400
+            except Exception as e:
+                return jsonify({'error': f'Invalid blog URL: {blog_urls[i]}, {str(e)}'}), 400
     
     # Create a unique job ID
     job_id = str(uuid.uuid4())
@@ -108,6 +126,7 @@ def start_scraping():
         'progress': 0,
         'url': url,
         'max_pages': max_pages,
+        'blog_urls': blog_urls,
         'start_time': time.time(),
         'message': 'Initializing scraper...',
         'urls_found': [],
@@ -116,20 +135,24 @@ def start_scraping():
     }
     
     # Start scraping in a background thread
-    thread = Thread(target=run_scraper, args=(job_id, url, max_pages))
+    thread = Thread(target=run_scraper, args=(job_id, url, max_pages, blog_urls))
     thread.daemon = True
     thread.start()
     
     return jsonify({'job_id': job_id})
 
-def run_scraper(job_id, url, max_pages):
+def run_scraper(job_id, url, max_pages, blog_urls=None):
     try:
         # Update job status in memory and database
-        update_job_status(job_id, 'extracting_urls', 'Extracting internal URLs from homepage...', 5)
+        if blog_urls:
+            update_job_status(job_id, 'extracting_urls', f'Extracting URLs from {len(blog_urls)} blog sections...', 5)
+        else:
+            update_job_status(job_id, 'extracting_urls', 'Extracting internal URLs from homepage...', 5)
         
         # Extract internal URLs
         urls = scraper.extract_internal_urls(url, max_pages, 
-                                           progress_callback=lambda p, m: update_progress(job_id, p, m))
+                                           progress_callback=lambda p, m: update_progress(job_id, p, m),
+                                           blog_urls=blog_urls)
         
         # Store URLs in memory
         scraping_jobs[job_id]['urls_found'] = urls

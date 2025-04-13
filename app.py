@@ -409,6 +409,7 @@ def download_results(job_id):
 @app.route('/api/extract_preview', methods=['POST'])
 def extract_preview():
     url = request.json.get('url', '')
+    blog_urls_input = request.json.get('blog_urls', '')
     
     # Validate URL
     if not url:
@@ -417,6 +418,15 @@ def extract_preview():
     # Ensure URL has a scheme
     if not url.startswith(('http://', 'https://')):
         url = 'https://' + url
+    
+    # Process blog URLs if provided
+    blog_urls = None
+    if blog_urls_input:
+        blog_urls = [blog_url.strip() for blog_url in blog_urls_input.split(',')]
+        # Ensure all blog URLs have a scheme
+        for i in range(len(blog_urls)):
+            if not blog_urls[i].startswith(('http://', 'https://')):
+                blog_urls[i] = 'https://' + blog_urls[i]
     
     try:
         # Less strict URL validation
@@ -428,7 +438,7 @@ def extract_preview():
             }), 400
         
         # Get a quick preview of URLs
-        urls = scraper.extract_internal_urls(url, max_urls=5, preview=True)
+        urls = scraper.extract_internal_urls(url, max_urls=5, preview=True, blog_urls=blog_urls)
         return jsonify({
             'success': True,
             'urls': urls[:5],  # Return only first 5 URLs

@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const scrapeForm = document.getElementById('scrapeForm');
     const urlInput = document.getElementById('urlInput');
     const maxPagesInput = document.getElementById('maxPagesInput');
+    const blogUrlsInput = document.getElementById('blogUrlsInput');
     const startScrapingBtn = document.getElementById('startScrapingBtn');
     const previewBtn = document.getElementById('previewBtn');
     
@@ -61,6 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('url', urlInput.value);
         formData.append('max_pages', maxPagesInput.value);
+        formData.append('blog_urls', blogUrlsInput.value);
         
         // Send request to start scraping
         fetch('/start_scraping', {
@@ -129,7 +131,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                url: urlInput.value
+                url: urlInput.value,
+                blog_urls: blogUrlsInput.value
             })
         })
         .then(response => response.json())
@@ -195,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function setFormEnabled(enabled) {
         urlInput.disabled = !enabled;
         maxPagesInput.disabled = !enabled;
+        blogUrlsInput.disabled = !enabled;
         startScrapingBtn.disabled = !enabled;
         previewBtn.disabled = !enabled;
     }

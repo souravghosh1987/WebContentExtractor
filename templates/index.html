@@ -43,6 +43,12 @@
                                 <div class="form-text">Limit the number of pages to scrape (maximum 100).</div>
                             </div>
                             
+                            <div class="mb-3">
+                                <label for="blogUrlsInput" class="form-label">Blog Section URLs (Optional)</label>
+                                <textarea class="form-control" id="blogUrlsInput" rows="3" placeholder="https://example.com/blogs/resource-center, https://example.com/blogs/articles"></textarea>
+                                <div class="form-text">Enter specific blog section URLs to scrape, separated by commas. Leave empty to scrape all internal pages.</div>
+                            </div>
+                            
                             <button type="submit" class="btn btn-primary" id="startScrapingBtn">
                                 <i class="bi bi-download me-2"></i>Start Scraping
                             </button>

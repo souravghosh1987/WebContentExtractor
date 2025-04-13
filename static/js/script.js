@@ -62,7 +62,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('url', urlInput.value);
         formData.append('max_pages', maxPagesInput.value);
-        formData.append('blog_urls', blogUrlsInput.value);
+        if (blogUrlsInput.value && blogUrlsInput.value.trim()) {
+            formData.append('blog_urls', blogUrlsInput.value.trim());
+        }
+        
+        console.log('Submitting form with URL:', urlInput.value, 
+                  'Max pages:', maxPagesInput.value, 
+                  'Blog URLs:', blogUrlsInput.value);
         
         // Send request to start scraping
         fetch('/start_scraping', {
@@ -86,6 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
             progressMessage.textContent = 'Scraping started...';
         })
         .catch(error => {
+            console.error('Error details:', error);
             showError('Error starting the scraping process: ' + error.message);
         });
     }
@@ -125,15 +132,22 @@ document.addEventListener('DOMContentLoaded', function() {
         previewContent.innerHTML = '<p>Loading preview...</p>';
         previewSection.classList.remove('d-none');
         
+        const previewData = {
+            url: urlInput.value
+        };
+        
+        if (blogUrlsInput.value && blogUrlsInput.value.trim()) {
+            previewData.blog_urls = blogUrlsInput.value.trim();
+        }
+        
+        console.log('Previewing URLs with:', previewData);
+        
         fetch('/api/extract_preview', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                url: urlInput.value,
-                blog_urls: blogUrlsInput.value
-            })
+            body: JSON.stringify(previewData)
         })
         .then(response => response.json())
         .then(data => {

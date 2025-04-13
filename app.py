@@ -63,42 +63,50 @@ def index():
 
 @app.route('/start_scraping', methods=['POST'])
 def start_scraping():
-    url = request.form.get('url', '').strip()
-    max_pages = int(request.form.get('max_pages', 10))
-    blog_urls_input = request.form.get('blog_urls', '').strip()
-    
-    # Validate URL
-    if not url:
-        return jsonify({'error': 'Please enter a URL'}), 400
-    
-    # Ensure URL has a scheme
-    if not url.startswith(('http://', 'https://')):
-        url = 'https://' + url
-        
     try:
+        url = request.form.get('url', '').strip()
+        max_pages_str = request.form.get('max_pages', '10')
+        blog_urls_input = request.form.get('blog_urls', '').strip()
+        
+        # Log inputs for debugging
+        logging.debug(f"URL: {url}, max_pages: {max_pages_str}, blog_urls: {blog_urls_input}")
+        
+        # Convert max_pages to integer
+        try:
+            max_pages = int(max_pages_str)
+        except ValueError:
+            return jsonify({'error': 'Maximum pages must be a valid number'}), 400
+            
+        # Validate URL
+        if not url:
+            return jsonify({'error': 'Please enter a URL'}), 400
+        
+        # Ensure URL has a scheme
+        if not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
+            
         # Less strict URL validation
         parsed_url = urllib.parse.urlparse(url)
         if not parsed_url.netloc:
             return jsonify({'error': 'Invalid URL format: missing domain name'}), 400
-    except Exception as e:
-        return jsonify({'error': f'Invalid URL: {str(e)}'}), 400
-    
-    # Process optional blog URLs
-    blog_urls = None
-    if blog_urls_input:
-        blog_urls = [url.strip() for url in blog_urls_input.split(',')]
         
-        # Ensure all blog URLs have a scheme and validate them
-        for i in range(len(blog_urls)):
-            if not blog_urls[i].startswith(('http://', 'https://')):
-                blog_urls[i] = 'https://' + blog_urls[i]
-                
-            try:
-                parsed = urllib.parse.urlparse(blog_urls[i])
-                if not parsed.netloc:
-                    return jsonify({'error': f'Invalid blog URL: {blog_urls[i]}'}), 400
-            except Exception as e:
-                return jsonify({'error': f'Invalid blog URL: {blog_urls[i]}, {str(e)}'}), 400
+        # Process optional blog URLs
+        blog_urls = None
+        if blog_urls_input:
+            blog_urls = [u.strip() for u in blog_urls_input.split(',') if u.strip()]
+            
+            if blog_urls:
+                # Ensure all blog URLs have a scheme and validate them
+                for i in range(len(blog_urls)):
+                    if not blog_urls[i].startswith(('http://', 'https://')):
+                        blog_urls[i] = 'https://' + blog_urls[i]
+                    
+                    parsed = urllib.parse.urlparse(blog_urls[i])
+                    if not parsed.netloc:
+                        return jsonify({'error': f'Invalid blog URL: {blog_urls[i]}'}), 400
+    except Exception as e:
+        logging.error(f"Error in start_scraping route: {str(e)}")
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 400
     
     # Create a unique job ID
     job_id = str(uuid.uuid4())

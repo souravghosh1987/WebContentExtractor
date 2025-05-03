@@ -1,0 +1,14 @@
+# Ignore virtual environment
+venv/
+__pycache__/
+
+# Ignore scrape result outputs
+scrape_results_*.*
+scraped_urls.json
+
+# Ignore logs and temp files
+*.log
+*.tmp
+
+# Ignore system files
+.DS_Store

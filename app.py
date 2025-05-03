@@ -19,7 +19,10 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key_for_development")
 
 # Configure SQLAlchemy
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+# Use environment DATABASE_URL or default to a local SQLite file in the project root
+db_uri = os.environ.get("DATABASE_URL") or "sqlite:///./web_content_extractor.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
+logging.debug(f"Using SQLALCHEMY_DATABASE_URI = {db_uri}")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -460,4 +463,4 @@ def extract_preview():
         }), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True)
